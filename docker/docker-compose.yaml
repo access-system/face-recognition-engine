@@ -1,0 +1,12 @@
+services:
+  access-system-face-detector-cache:
+    image: redis/redis-stack-server:7.4.0-v8
+    container_name: access-system-face-detector-cache
+    ports:
+    - "6379:6379"
+    volumes:
+    - redis-data:/data
+    restart: on-failure
+
+volumes:
+  redis-data:
