@@ -15,6 +15,6 @@ def validate_embedding(embedding: np.ndarray):
     response = requests.post(url, json=data)
 
     if response.status_code == 200:
-        return True, response.text
+        return True, response.json()
     else:
         return False, response.text

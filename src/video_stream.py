@@ -4,7 +4,7 @@ import cv2
 
 
 class VideoStream:
-    def __init__(self, stop_event, lock, shared_frames, shared_access, log, name: str = "Face Detection", fps = 30):
+    def __init__(self, stop_event, lock, shared_frames, shared_access, shared_face_data, log, name: str = "Face Detection", fps = 30):
         self.stop_event = stop_event
         self.log = log
 
@@ -14,6 +14,7 @@ class VideoStream:
         self.lock = lock
         self.shared_frames = shared_frames
         self.shared_access = shared_access
+        self.shared_face_data = shared_face_data
 
         self.access_statuses = {
             0: ("Access Granted", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2),
@@ -41,16 +42,28 @@ class VideoStream:
 
                 access_status = self.shared_access['status']
 
+                name = self.shared_face_data['name']
+                accuracy = self.shared_face_data['accuracy']
+
             if default_frame is None:
                 continue
 
             if access_status is None:
                 access_status = 2
 
+            if name is None:
+                name = "Unknown"
+
+            if accuracy is None:
+                accuracy = 0.0
+
             # Display processed frame if available, else display latest frame
             if (processed_frame is not None) and (access_status == 0 or access_status == 1):
                 frame = cv2.flip(processed_frame, 1)
                 cv2.putText(frame, *self.access_statuses[access_status])
+
+                if access_status == 0:
+                    cv2.putText(frame, f"{name} ({accuracy:.2f}%)", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             else:
                 frame = cv2.flip(default_frame, 1)
                 cv2.putText(frame, *self.access_statuses[2])

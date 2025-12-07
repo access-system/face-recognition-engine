@@ -46,7 +46,7 @@ class VerifiedEmbeddingsCache:
             self.client.ft(self.EMBEDDING_INDEX_NAME).info()
         except:
             schema = (
-                TagField("tag"),
+                TagField("name"),
                 VectorField("embedding", "FLAT", {
                     "TYPE": "FLOAT32",
                     "DIM": self.EMBEDDING_DIMENSIONS,
@@ -56,20 +56,22 @@ class VerifiedEmbeddingsCache:
             definition = IndexDefinition(prefix=["doc:"], index_type=IndexType.HASH)
             self.client.ft(self.EMBEDDING_INDEX_NAME).create_index(schema, definition=definition)
 
-    def store_embedding(self, embedding) -> None:
+    def store_embedding(self, embedding, name) -> None:
         pipe = self.client.pipeline()
         key = f"doc:{hashlib.sha256(embedding.tobytes()).hexdigest()}"
+
+        tag_name = name.replace(" ", "|")
         pipe.hset(key, mapping={
-            "tag": "verified",
+            "name": tag_name,
             "embedding": embedding.tobytes()
         })
         pipe.expire(key, 3600)  # Set expiration time to 1 hour
         pipe.execute()
 
 
-    def verify_embedding(self, embedding) -> bool:
+    def verify_embedding(self, embedding):
         base_query = f'*=>[KNN 1 @embedding $vec_param AS vector_score]'
-        query = Query(base_query).sort_by("vector_score").return_fields("vector_score").dialect(2)
+        query = Query(base_query).sort_by("vector_score").return_fields("name", "vector_score").dialect(2)
 
         vec_param = embedding.astype('float32').tobytes()
         params_dict = {"vec_param": vec_param}
@@ -79,5 +81,9 @@ class VerifiedEmbeddingsCache:
         if results.total > 0:
             score = results.docs[0].vector_score
             if 1.0 - float(score) > 0.5:  # Threshold for verification
-                return True
-        return False
+                data = {
+                    "name": results.docs[0]["name"],
+                    "accuracy": (1.0 - float(score)) * 100
+                }
+                return True, data
+        return False, None
