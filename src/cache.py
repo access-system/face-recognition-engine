@@ -1,6 +1,7 @@
 import hashlib
 import time
 
+import numpy
 import redis
 from redis.commands.search.field import TagField, VectorField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
@@ -58,6 +59,9 @@ class VerifiedEmbeddingsCache:
 
     def store_embedding(self, embedding, name) -> None:
         pipe = self.client.pipeline()
+
+        embedding = numpy.asarray(embedding, dtype=numpy.float32)
+
         key = f"doc:{hashlib.sha256(embedding.tobytes()).hexdigest()}"
 
         tag_name = name.replace(" ", "|")
