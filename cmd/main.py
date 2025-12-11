@@ -27,8 +27,9 @@ def main():
     log.info("Initializing cache...")
     cache = VerifiedEmbeddingsCache(log, 'localhost', 6379, 0)
 
-    log.info("Set FPS to 20...")
     fps = 30
+    log.info(f"Set FPS to {fps}...")
+
     main_camera = 0
 
     log.info("Setup pipelines...")
