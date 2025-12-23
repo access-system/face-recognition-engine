@@ -1,6 +1,7 @@
 import threading
 
 import loguru
+import urllib3
 
 from src.cache import VerifiedEmbeddingsCache
 from src.video_capture import VideoCapture
@@ -11,6 +12,8 @@ from src.validation import EmbeddingValidation
 
 
 def main():
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     lock = threading.Lock()
 
     # Event to signal threads to stop
